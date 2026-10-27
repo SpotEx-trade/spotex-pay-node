@@ -1,0 +1,45 @@
+{
+  "name": "spotex-pay",
+  "version": "0.1.0",
+  "description": "Node.js client for the SpotEx Pay merchant API: checkouts, checkout sessions, payouts and webhook verification.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepare": "npm run build",
+    "test": "npm run build && node --test test/*.test.js"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  },
+  "keywords": [
+    "spotex",
+    "crypto",
+    "payments",
+    "bitcoin",
+    "dogecoin",
+    "peercoin",
+    "merchant",
+    "checkout",
+    "webhooks"
+  ],
+  "homepage": "https://spotex.trade/docs/merchant",
+  "repository": "github:SpotEx-trade/spotex-pay-node",
+  "license": "MIT"
+}
