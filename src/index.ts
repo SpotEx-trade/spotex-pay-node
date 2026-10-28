@@ -41,6 +41,8 @@ export interface Checkout {
   /** The price in dollars when quoted. */
   amount_usd: Decimal;
   coin: string;
+  /** For a token on an EVM chain, the one to send on ("BSC", "ETH", "POLYGON", "BASE"); null for a coin on its own chain. */
+  network: string | null;
   amount: Decimal;
   rate_usd: Decimal;
   /** Where the buyer sends the coin (on-chain checkouts). In test mode a test_ stand-in: never send to it. */
@@ -88,7 +90,10 @@ export interface Coin {
   rate_usd: Decimal;
   /** Can be sent from any wallet (POST /checkouts). */
   onchain: boolean;
+  /** The least from a wallet, on its cheapest network. */
   min_usd: Decimal | null;
+  /** Each way it can be sent from a wallet. Null network: the coin's own chain. */
+  networks: { network: string | null; name: string; min_usd: Decimal }[];
 }
 
 export interface Balance {
@@ -246,6 +251,8 @@ export type CreateCheckoutSessionParams = PriceParams & {
 export type CreateCheckoutParams = PriceParams & {
   /** A coin you accept with onchain: true (GET /coins). */
   coin: string;
+  /** For a token on several chains: one of its networks in GET /coins ("BSC"). */
+  network?: string;
   item: string;
   order_id?: string;
 };
