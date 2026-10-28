@@ -46,6 +46,28 @@ test("creates a checkout session: bearer key, JSON body, an idempotency key", as
   }
 });
 
+test("invoices: create with lines, retrieve, list and void go where the API reference says", async () => {
+  const api = await mockApi(() => [200, { id: "inv1", object: "invoice", url: "https://spotex.trade/invoice/inv1" }]);
+  try {
+    const spotex = new SpotExPay("sk_live_abc", { baseUrl: api.baseUrl });
+    const made = await spotex.invoices.create({ currency: "EUR", items: [{ description: "Logo", unit_price: "300" }] }, { idempotencyKey: "invoice-2041" });
+    assert.equal(made.url, "https://spotex.trade/invoice/inv1");
+    await spotex.invoices.retrieve("inv1");
+    await spotex.invoices.list({ limit: 5 });
+    await spotex.invoices.void("inv1");
+    assert.deepEqual(api.seen.map((r) => `${r.method} ${r.url}`), [
+      "POST /api/merchant/v1/invoices",
+      "GET /api/merchant/v1/invoices/inv1",
+      "GET /api/merchant/v1/invoices?limit=5",
+      "POST /api/merchant/v1/invoices/inv1/void",
+    ]);
+    assert.equal(api.seen[0].headers["idempotency-key"], "invoice-2041");
+    assert.deepEqual(api.seen[0].body, { currency: "EUR", items: [{ description: "Logo", unit_price: "300" }] });
+  } finally {
+    await api.close();
+  }
+});
+
 test("a price in another currency goes as price and currency", async () => {
   const api = await mockApi(() => [201, { id: "cs2", object: "checkout_session", url: "https://spotex.trade/m/cs2", price: "25.00", currency: "EUR", amount_usd: null }]);
   try {

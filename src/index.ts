@@ -24,6 +24,8 @@ export interface Checkout {
   object: "checkout";
   livemode: boolean;
   session_id: string | null;
+  /** The invoice it paid, if any. */
+  invoice_id: string | null;
   status: CheckoutStatus;
   method: "onchain" | "balance";
   item: string;
@@ -90,6 +92,38 @@ export interface Balance {
   coin: string;
   available: Decimal;
   locked: Decimal;
+}
+
+export interface InvoiceItem {
+  description: string;
+  quantity: Decimal;
+  unit_price: Decimal;
+  /** quantity × unit_price, rounded to the currency's decimals. */
+  amount: Decimal;
+}
+
+export interface Invoice {
+  id: string;
+  object: "invoice";
+  livemode: boolean;
+  /** INV-0001, INV-0002… */
+  number: string;
+  /** overdue: past due_at and still payable. */
+  status: "open" | "overdue" | "paid" | "void";
+  title: string | null;
+  customer_name: string | null;
+  customer_email: string | null;
+  items: InvoiceItem[];
+  currency: string;
+  total: Decimal;
+  memo: string | null;
+  due_at: string | null;
+  /** The invoice's page: send it to your customer. */
+  url: string;
+  checkout_id: string | null;
+  paid_at: string | null;
+  voided_at: string | null;
+  created_at: string;
 }
 
 export interface Transfer {
@@ -178,6 +212,21 @@ export type CreateCheckoutParams = PriceParams & {
   item: string;
   order_id?: string;
 };
+
+export interface CreateInvoiceParams {
+  /** A currency SpotEx Pay takes: https://spotex.trade/docs/merchant#currencies */
+  currency: string;
+  /** 1 to 50 lines. quantity is "1" when left out. */
+  items: { description: string; quantity?: Decimal; unit_price: Decimal }[];
+  title?: string;
+  customer_name?: string;
+  /** For your records; SpotEx does not email the customer. */
+  customer_email?: string;
+  /** A note shown on the invoice, up to 12 lines. No links. */
+  memo?: string;
+  /** YYYY-MM-DD: overdue after the end of that day (UTC). */
+  due_date?: string;
+}
 
 export interface ListCheckoutsParams {
   status?: "paid" | "pending";
@@ -268,6 +317,16 @@ export class SpotExPay {
     list: (params: ListCheckoutsParams = {}) => this.get<List<Checkout>>("/checkouts", params as Record<string, string | number | undefined>),
     /** Test mode only: pay a test checkout in part or in full, or let it run out. */
     simulate: (id: string, outcome: "paid" | "partial" | "expired") => this.post<Checkout>(`/checkouts/${encodeURIComponent(id)}/simulate`, { outcome }),
+  };
+
+  /** Live keys only. */
+  readonly invoices = {
+    /** An invoice with a page of its own: send your customer its `url`. */
+    create: (params: CreateInvoiceParams, options?: RequestOptions) => this.post<Invoice>("/invoices", params, options),
+    retrieve: (id: string) => this.get<Invoice>(`/invoices/${encodeURIComponent(id)}`),
+    list: (params: { limit?: number; before?: string } = {}) => this.get<List<Invoice>>("/invoices", params),
+    /** Cancel an unpaid invoice: its page stops taking payments. */
+    void: (id: string) => this.post<Invoice>(`/invoices/${encodeURIComponent(id)}/void`, {}),
   };
 
   readonly coins = {
