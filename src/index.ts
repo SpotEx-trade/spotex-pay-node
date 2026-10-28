@@ -10,7 +10,7 @@ import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
  */
 
 export const DEFAULT_BASE_URL = "https://spotex.trade/api/merchant/v1";
-export const VERSION = "0.2.0";
+export const VERSION = "0.3.0";
 
 /* ----------------------------------------------------------------- types */
 
@@ -26,6 +26,9 @@ export interface Checkout {
   session_id: string | null;
   /** The invoice it paid, if any. */
   invoice_id: string | null;
+  /** The subscription it charged, and which period (1 is the first), if any. */
+  subscription_id: string | null;
+  subscription_period: number | null;
   status: CheckoutStatus;
   method: "onchain" | "balance";
   item: string;
@@ -100,6 +103,40 @@ export interface InvoiceItem {
   unit_price: Decimal;
   /** quantity × unit_price, rounded to the currency's decimals. */
   amount: Decimal;
+}
+
+export type PlanInterval = "week" | "month" | "year";
+
+export interface Plan {
+  id: string;
+  object: "plan";
+  livemode: boolean;
+  name: string;
+  price: Decimal;
+  currency: string;
+  interval: PlanInterval;
+  /** False: no new subscribers. */
+  active: boolean;
+  /** Where a SpotEx user subscribes. */
+  url: string;
+  created_at: string;
+}
+
+export interface Subscription {
+  id: string;
+  object: "subscription";
+  livemode: boolean;
+  status: "active" | "past_due" | "canceled";
+  plan: { id: string; name: string; price: Decimal; currency: string; interval: PlanInterval };
+  /** The subscriber's SpotEx username. */
+  subscriber: string;
+  coin: string;
+  periods_paid: number;
+  next_charge_at: string | null;
+  last_failure: string | null;
+  started_at: string;
+  canceled_at: string | null;
+  canceled_by: "subscriber" | "merchant" | "payment_failed" | "operator" | null;
 }
 
 export interface Invoice {
@@ -317,6 +354,20 @@ export class SpotExPay {
     list: (params: ListCheckoutsParams = {}) => this.get<List<Checkout>>("/checkouts", params as Record<string, string | number | undefined>),
     /** Test mode only: pay a test checkout in part or in full, or let it run out. */
     simulate: (id: string, outcome: "paid" | "partial" | "expired") => this.post<Checkout>(`/checkouts/${encodeURIComponent(id)}/simulate`, { outcome }),
+  };
+
+  /** Live keys only. A plan's price and interval never change: a new price is a new plan. */
+  readonly plans = {
+    create: (params: { name: string; price: Decimal; currency: string; interval: PlanInterval }) => this.post<Plan>("/plans", params),
+    list: () => this.get<{ data: Plan[] }>("/plans"),
+  };
+
+  /** Live keys only. */
+  readonly subscriptions = {
+    retrieve: (id: string) => this.get<Subscription>(`/subscriptions/${encodeURIComponent(id)}`),
+    list: (params: { status?: "active" | "past_due" | "canceled"; limit?: number; before?: string } = {}) => this.get<List<Subscription>>("/subscriptions", params),
+    /** No more charges; periods paid stay paid. */
+    cancel: (id: string) => this.post<Subscription>(`/subscriptions/${encodeURIComponent(id)}/cancel`, {}),
   };
 
   /** Live keys only. */

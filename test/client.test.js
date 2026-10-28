@@ -68,6 +68,28 @@ test("invoices: create with lines, retrieve, list and void go where the API refe
   }
 });
 
+test("plans and subscriptions go where the API reference says", async () => {
+  const api = await mockApi(() => [200, { id: "x" }]);
+  try {
+    const spotex = new SpotExPay("sk_live_abc", { baseUrl: api.baseUrl });
+    await spotex.plans.create({ name: "Monthly box", price: "9.99", currency: "EUR", interval: "month" });
+    await spotex.plans.list();
+    await spotex.subscriptions.list({ status: "active", limit: 10 });
+    await spotex.subscriptions.retrieve("sub1");
+    await spotex.subscriptions.cancel("sub1");
+    assert.deepEqual(api.seen.map((r) => `${r.method} ${r.url}`), [
+      "POST /api/merchant/v1/plans",
+      "GET /api/merchant/v1/plans",
+      "GET /api/merchant/v1/subscriptions?status=active&limit=10",
+      "GET /api/merchant/v1/subscriptions/sub1",
+      "POST /api/merchant/v1/subscriptions/sub1/cancel",
+    ]);
+    assert.deepEqual(api.seen[0].body, { name: "Monthly box", price: "9.99", currency: "EUR", interval: "month" });
+  } finally {
+    await api.close();
+  }
+});
+
 test("a price in another currency goes as price and currency", async () => {
   const api = await mockApi(() => [201, { id: "cs2", object: "checkout_session", url: "https://spotex.trade/m/cs2", price: "25.00", currency: "EUR", amount_usd: null }]);
   try {

@@ -84,6 +84,17 @@ const invoice = await spotex.invoices.create(
 // send your customer invoice.url; checkout.paid arrives with invoice_id when they pay
 ```
 
+## Subscriptions
+
+```js
+const plan = await spotex.plans.create({ name: "Monthly box", price: "9.99", currency: "EUR", interval: "month" });
+// send SpotEx users plan.url: they subscribe from their balance, and each period comes as checkout.paid
+// with subscription_id; subscription.created, .past_due and .canceled tell you how each one goes
+
+const active = await spotex.subscriptions.list({ status: "active" });
+await spotex.subscriptions.cancel(active.data[0].id);
+```
+
 ## Webhooks
 
 Set your webhook address in the Merchant Center. Every event is signed; check it against the **raw** body before trusting anything in it.
