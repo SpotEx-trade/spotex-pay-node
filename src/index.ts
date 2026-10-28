@@ -17,7 +17,8 @@ export const VERSION = "0.3.0";
 /** Amounts are decimal strings, never numbers, so nothing is lost to floating point. */
 export type Decimal = string;
 
-export type CheckoutStatus = "pending" | "partially_paid" | "paid" | "expired";
+/** "released": a part payment SpotEx passed to your wallet without you accepting it. The order is not paid. */
+export type CheckoutStatus = "pending" | "partially_paid" | "paid" | "released" | "expired";
 
 export interface Checkout {
   id: string;
@@ -59,6 +60,8 @@ export interface Checkout {
   paid_late: boolean;
   duplicate: boolean;
   accepted_short: boolean;
+  /** Who let it go short: "tolerance" or "merchant" pay the order; "operator" or "auto" mean status "released". */
+  accepted_by: "tolerance" | "merchant" | "operator" | "auto" | null;
   expires_at: string;
   paid_at: string | null;
   created_at: string;
@@ -208,6 +211,7 @@ export type EventType =
   | "checkout.paid"
   | "checkout.partial"
   | "checkout.extra"
+  | "checkout.released"
   | "checkout.refunded"
   | "payout.withdrawal.broadcast"
   | "payout.withdrawal.completed"
@@ -273,7 +277,7 @@ export interface CreateInvoiceParams {
 }
 
 export interface ListCheckoutsParams {
-  status?: "paid" | "pending";
+  status?: "paid" | "released" | "pending";
   limit?: number;
   before?: string;
 }

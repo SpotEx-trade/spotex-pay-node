@@ -117,7 +117,7 @@ app.post("/webhooks/spotex", express.raw({ type: "application/json" }), (req, re
 });
 ```
 
-`constructEvent` refuses events more than five minutes old. Events: `checkout.paid`, `checkout.partial`, `checkout.extra`, `checkout.refunded`, `payout.withdrawal.*`, `payout.transfer.*`, `test`.
+`constructEvent` refuses events more than five minutes old. Events: `checkout.paid`, `checkout.partial`, `checkout.extra`, `checkout.released` (a part payment passed on unaccepted: not a paid order), `checkout.refunded`, `payout.withdrawal.*`, `payout.transfer.*`, `test`.
 
 ## Test mode
 
