@@ -13,11 +13,12 @@ const app = express();
 
 // 1. The buyer presses "Pay with crypto": make a checkout session for the order and send them to it.
 app.post("/orders/:id/pay", async (req, res) => {
-  const order = { id: req.params.id, total: "25.00", name: "Gift box" }; // from your database
+  const order = { id: req.params.id, total: "25.00", currency: "USD", name: "Gift box" }; // from your database
   try {
     const session = await spotex.checkoutSessions.create(
       {
-        amount_usd: order.total,
+        price: order.total,
+        currency: order.currency,
         item: order.name,
         order_id: order.id,
         return_url: `https://yourshop.com/orders/${order.id}/thanks`,

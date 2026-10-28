@@ -4,13 +4,13 @@ import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
  * SpotEx Pay merchant API client.
  *
  *   const spotex = new SpotExPay(process.env.SPOTEX_KEY!);
- *   const session = await spotex.checkoutSessions.create({ amount_usd: "25.00", item: "Gift box" });
+ *   const session = await spotex.checkoutSessions.create({ price: "25.00", currency: "EUR", item: "Gift box" });
  *
  * API reference: https://spotex.trade/docs/merchant
  */
 
 export const DEFAULT_BASE_URL = "https://spotex.trade/api/merchant/v1";
-export const VERSION = "0.1.1";
+export const VERSION = "0.2.0";
 
 /* ----------------------------------------------------------------- types */
 
@@ -28,6 +28,12 @@ export interface Checkout {
   method: "onchain" | "balance";
   item: string;
   order_id: string | null;
+  /** The price as asked, in `currency` ("USD", "EUR", "JPY"…). */
+  price: Decimal;
+  currency: string;
+  /** Dollars per unit of the currency when quoted: "1" for USD. */
+  currency_rate_usd: Decimal;
+  /** The price in dollars when quoted. */
   amount_usd: Decimal;
   coin: string;
   amount: Decimal;
@@ -60,6 +66,9 @@ export interface CheckoutSession {
   /** Send the buyer here. */
   url: string;
   item: string;
+  price: Decimal | null;
+  currency: string;
+  /** The price when it is in dollars; null for another currency, which becomes dollars when the buyer opens a checkout. */
   amount_usd: Decimal | null;
   order_id: string | null;
   return_url: string | null;
@@ -148,23 +157,27 @@ export interface WebhookEvent {
   };
 }
 
-export interface CreateCheckoutSessionParams {
-  amount_usd: Decimal;
+/**
+ * A price in any currency SpotEx Pay takes (https://spotex.trade/docs/merchant#currencies),
+ * or in dollars as amount_usd.
+ */
+export type PriceParams = { price: Decimal; currency: string; amount_usd?: never } | { amount_usd: Decimal; price?: never; currency?: never };
+
+export type CreateCheckoutSessionParams = PriceParams & {
   item: string;
   order_id?: string;
   /** Must be on your merchant website. */
   return_url?: string;
   /** 5 to 1440; 60 when left out. */
   expires_in_minutes?: number;
-}
+};
 
-export interface CreateCheckoutParams {
-  amount_usd: Decimal;
+export type CreateCheckoutParams = PriceParams & {
   /** A coin you accept with onchain: true (GET /coins). */
   coin: string;
   item: string;
   order_id?: string;
-}
+};
 
 export interface ListCheckoutsParams {
   status?: "paid" | "pending";

@@ -38,7 +38,8 @@ const spotex = new SpotExPay(process.env.SPOTEX_KEY);
 
 const session = await spotex.checkoutSessions.create(
   {
-    amount_usd: "25.00",
+    price: "25.00",
+    currency: "EUR", // or USD, GBP, JPY… any of https://spotex.trade/docs/merchant#currencies
     item: "Gift box",
     order_id: "1043",
     return_url: "https://yourshop.com/thanks", // must be on your merchant website
@@ -51,10 +52,12 @@ const session = await spotex.checkoutSessions.create(
 
 The buyer picks a coin and pays from any wallet or their SpotEx balance, then goes back to `return_url`. Your webhook hears `checkout.paid`.
 
+Your price becomes dollars at the exchange rate when the buyer opens the checkout. `amount_usd: "25.00"` in place of `price` and `currency` still works, for a price in dollars.
+
 ## Or in your own design
 
 ```js
-const checkout = await spotex.checkouts.create({ amount_usd: "25.00", coin: "DOGE", item: "Gift box", order_id: "1043" });
+const checkout = await spotex.checkouts.create({ price: "25.00", currency: "EUR", coin: "DOGE", item: "Gift box", order_id: "1043" });
 
 // show checkout.address and checkout.amount (a QR code of the address helps),
 // then poll spotex.checkouts.retrieve(checkout.id) or wait for the webhook

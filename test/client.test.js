@@ -46,6 +46,18 @@ test("creates a checkout session: bearer key, JSON body, an idempotency key", as
   }
 });
 
+test("a price in another currency goes as price and currency", async () => {
+  const api = await mockApi(() => [201, { id: "cs2", object: "checkout_session", url: "https://spotex.trade/m/cs2", price: "25.00", currency: "EUR", amount_usd: null }]);
+  try {
+    const spotex = new SpotExPay("sk_test_abc", { baseUrl: api.baseUrl });
+    const s = await spotex.checkoutSessions.create({ price: "25.00", currency: "EUR", item: "Gift box" });
+    assert.equal(s.currency, "EUR");
+    assert.deepEqual(api.seen[0].body, { price: "25.00", currency: "EUR", item: "Gift box" });
+  } finally {
+    await api.close();
+  }
+});
+
 test("makes an idempotency key for a POST when none is given, and none for a GET", async () => {
   const api = await mockApi(() => [200, { data: [] }]);
   try {

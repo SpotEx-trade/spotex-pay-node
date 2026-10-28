@@ -8,12 +8,12 @@ export async function POST(_request: Request, { params }: { params: Promise<{ or
   const { orderId } = await params;
   const order = await getOrder(orderId);
   const session = await spotex.checkoutSessions.create(
-    { amount_usd: order.total, item: order.name, order_id: order.id, return_url: `https://yourshop.com/orders/${order.id}` },
+    { price: order.total, currency: order.currency, item: order.name, order_id: order.id, return_url: `https://yourshop.com/orders/${order.id}` },
     { idempotencyKey: `order-${order.id}` },
   );
   redirect(session.url);
 }
 
 async function getOrder(id: string) {
-  return { id, total: "25.00", name: "Gift box" }; // from your database
+  return { id, total: "25.00", currency: "USD", name: "Gift box" }; // from your database
 }
