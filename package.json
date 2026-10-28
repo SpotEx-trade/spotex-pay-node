@@ -1,6 +1,6 @@
 {
   "name": "spotex-pay",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Node.js client for the SpotEx Pay merchant API: checkouts, checkout sessions, payouts and webhook verification.",
   "type": "module",
   "main": "./dist/index.js",

@@ -1,5 +1,7 @@
 # SpotEx Pay for Node.js
 
+[![tests](https://github.com/SpotEx-trade/spotex-pay-node/actions/workflows/tests.yml/badge.svg)](https://github.com/SpotEx-trade/spotex-pay-node/actions/workflows/tests.yml)
+
 Accept crypto on your website with [SpotEx Pay](https://spotex.trade/merchants): a hosted checkout or your own, signed webhooks, payouts, and a test mode to build against. No dependencies; TypeScript types included.
 
 - **0.5% per payment**, no setup or monthly fee

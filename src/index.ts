@@ -10,7 +10,7 @@ import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
  */
 
 export const DEFAULT_BASE_URL = "https://spotex.trade/api/merchant/v1";
-export const VERSION = "0.1.0";
+export const VERSION = "0.1.1";
 
 /* ----------------------------------------------------------------- types */
 
@@ -338,6 +338,7 @@ export class SpotExPay {
  * than `toleranceSeconds` (a replay).
  */
 export function constructEvent(rawBody: string | Buffer, signatureHeader: string | null | undefined, secret: string, toleranceSeconds = 300): WebhookEvent {
+  requireSecret(secret);
   if (!signatureHeader) throw new SignatureVerificationError("No SpotEx-Signature header.");
   const parts: Record<string, string> = {};
   for (const piece of signatureHeader.split(",")) {
@@ -355,8 +356,17 @@ export function constructEvent(rawBody: string | Buffer, signatureHeader: string
   return JSON.parse(body) as WebhookEvent;
 }
 
+/**
+ * An empty key would accept a body anyone can sign, as happens when the
+ * secret's environment variable is set but empty: refuse it outright.
+ */
+function requireSecret(secret: unknown): asserts secret is string {
+  if (typeof secret !== "string" || secret === "") throw new TypeError("SpotEx Pay: no webhook signing secret. Pass the whsec_… secret from the Merchant Center (is SPOTEX_WEBHOOK_SECRET set?).");
+}
+
 /** True when the signature checks out; constructEvent says why when it does not. */
 export function verifySignature(rawBody: string | Buffer, signatureHeader: string | null | undefined, secret: string, toleranceSeconds = 300): boolean {
+  requireSecret(secret);
   try {
     constructEvent(rawBody, signatureHeader, secret, toleranceSeconds);
     return true;
@@ -367,6 +377,7 @@ export function verifySignature(rawBody: string | Buffer, signatureHeader: strin
 
 /** Signs a body as SpotEx does: for your own tests of a webhook handler. */
 export function signPayload(body: string, secret: string, unix = Math.floor(Date.now() / 1000)): string {
+  requireSecret(secret);
   return `t=${unix},v1=${createHmac("sha256", secret).update(`${unix}.${body}`).digest("hex")}`;
 }
 

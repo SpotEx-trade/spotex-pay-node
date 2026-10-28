@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
+import { createHmac } from "node:crypto";
 import { SpotExPay, SpotExPayError, SignatureVerificationError, constructEvent, signPayload, verifySignature } from "../dist/index.js";
 
 /** A stand-in for the API that records what it was sent and answers as told. */
@@ -130,4 +131,13 @@ test("refuses a webhook that was changed, signed with another secret, too old or
   assert.throws(() => constructEvent(BODY, undefined, SECRET, 0), /No SpotEx-Signature/);
   const fresh = signPayload(BODY, SECRET);
   assert.equal(verifySignature(Buffer.from(BODY), fresh, SECRET), true);
+});
+
+test("refuses to verify or sign without a secret: an empty variable must not let anyone in", () => {
+  // Signed with an empty key, as an attacker could when the secret is empty.
+  const forged = `t=1793071234,v1=${createHmac("sha256", "").update(`1793071234.${BODY}`).digest("hex")}`;
+  assert.throws(() => constructEvent(BODY, forged, "", 0), /no webhook signing secret/);
+  assert.throws(() => verifySignature(BODY, forged, "", 0), /no webhook signing secret/);
+  assert.throws(() => verifySignature(BODY, forged, undefined, 0), TypeError);
+  assert.throws(() => signPayload(BODY, ""), TypeError);
 });
